@@ -33,6 +33,25 @@ input {
   padding: 3rem 1rem 4rem;
 }
 
+
+.header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.auth-wrapper {
+  min-height: 80vh;
+  display: grid;
+  place-items: center;
+}
+
+.auth-card {
+  width: min(560px, 100%);
+}
+
 .grid {
   display: grid;
   gap: 1rem;

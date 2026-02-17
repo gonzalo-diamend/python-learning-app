@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "npm run typecheck"
+    "test": "npm run test:unit",
+    "test:unit": "tsc --module commonjs --target es2020 --outDir .test-dist tests/quiz.test.ts lib/quiz.ts lib/types.ts && node --test .test-dist/tests/quiz.test.js && node -e \"require('fs').rmSync('.test-dist',{recursive:true,force:true})\""
   },
   "dependencies": {
     "next": "14.0.0",

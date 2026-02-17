@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
+import { AuthGate } from "../components/AuthGate";
 import { LessonPicker } from "../components/LessonPicker";
 import { ModulePicker } from "../components/ModulePicker";
 import { ProfileCard } from "../components/ProfileCard";
@@ -17,6 +18,7 @@ type ProgressData = {
 const DEFAULT_USER = "demo-wife";
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
@@ -28,11 +30,21 @@ export default function Home() {
   const [progressSubmitError, setProgressSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
+    const savedAuth = window.localStorage.getItem("learning_auth");
+    if (savedAuth === "ok") {
+      setIsAuthenticated(true);
+    }
+
     const saved = window.localStorage.getItem("learning_user_id");
     if (saved) {
       setUserId(saved);
     }
   }, []);
+
+  const onLogout = () => {
+    window.localStorage.removeItem("learning_auth");
+    setIsAuthenticated(false);
+  };
 
   const onChangeUserId = (next: string) => {
     const trimmed = next.trimStart();
@@ -41,7 +53,7 @@ export default function Home() {
   };
 
   const { data: modules, isLoading: modulesLoading, error: modulesError } = useSWR<ModuleCard[]>(
-    "/modules",
+    isAuthenticated ? "/modules" : null,
     fetchJson
   );
 
@@ -158,11 +170,20 @@ export default function Home() {
     ? answers.length === lesson.quiz.questions.length && answers.every((answer) => answer !== undefined)
     : false;
 
+  if (!isAuthenticated) {
+    return <AuthGate onLogin={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <main className="main">
-      <header>
-        <h1>Aprende Python paso a paso</h1>
-        <p>Estrategia guiada, pequeños retos y feedback inmediato.</p>
+      <header className="header-row">
+        <div>
+          <h1>Aprende Python paso a paso</h1>
+          <p>Estrategia guiada, pequeños retos y feedback inmediato.</p>
+        </div>
+        <button className="btn btn-outline" onClick={onLogout}>
+          Cerrar sesión
+        </button>
       </header>
 
       <section className="grid" style={{ marginTop: "2rem" }}>
@@ -226,17 +247,6 @@ export default function Home() {
           <ProgressCard completionPercent={completionPercent} userId={userId || DEFAULT_USER} />
         </section>
       )}
-
-      <section style={{ marginTop: "3rem" }}>
-        <article className="card">
-          <h2>Pasos para usarla</h2>
-          <div className="badges">
-            <span className="badge">1) Levanta backend en :8000</span>
-            <span className="badge">2) Define NEXT_PUBLIC_API_BASE_URL</span>
-            <span className="badge">3) Ejecuta npm run dev en este repo</span>
-          </div>
-        </article>
-      </section>
     </main>
   );
 }
