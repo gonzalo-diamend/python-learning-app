@@ -22,3 +22,17 @@ test("buildContext retorna incorrect si respuesta incorrecta y quiz enviado", ()
   const result = buildContext(sampleQuestion, 0, true);
   assert.equal(result?.type, "incorrect");
 });
+
+test("buildContext retorna null si el índice seleccionado es inválido", () => {
+  const result = buildContext(sampleQuestion, 10, true);
+  assert.equal(result, null);
+});
+
+test("buildContext retorna null si correct_index está fuera de rango", () => {
+  const malformedQuestion = {
+    ...sampleQuestion,
+    correct_index: 10,
+  };
+  const result = buildContext(malformedQuestion, 1, true);
+  assert.equal(result, null);
+});

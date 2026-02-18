@@ -17,6 +17,13 @@ export const buildContext = (
     return null;
   }
 
+  const isSelectedIndexValid = selectedIndex >= 0 && selectedIndex < question.options.length;
+  const isCorrectIndexValid = question.correct_index >= 0 && question.correct_index < question.options.length;
+
+  if (!isSelectedIndexValid || !isCorrectIndexValid) {
+    return null;
+  }
+
   const selectedOption = question.options[selectedIndex];
   const correctOption = question.options[question.correct_index];
   const isCorrect = selectedIndex === question.correct_index;
