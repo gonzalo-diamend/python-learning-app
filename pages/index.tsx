@@ -9,6 +9,7 @@ import { QuizPanel } from "../components/QuizPanel";
 import { RecommendedModules } from "../components/RecommendedModules";
 import { StatusMessage } from "../components/StatusMessage";
 import { fetchJson, postJson } from "../lib/api";
+import { buildProgressPayload, buildQuizPayload, canSubmitQuiz, pickLessonId, pickModuleId } from "../lib/home-flow";
 import { Lesson, ModuleCard, ModuleDetail, QuizResult } from "../lib/types";
 
 type ProgressData = {
@@ -58,35 +59,16 @@ export default function Home() {
   );
 
   useEffect(() => {
-    if (!modules?.length) {
-      return;
-    }
-
-    setSelectedModuleId((current) => {
-      if (current && modules.some((module) => module.id === current)) {
-        return current;
-      }
-      return modules[0].id;
-    });
+    setSelectedModuleId((current) => pickModuleId(modules, current));
   }, [modules]);
 
-  const { data: moduleDetail, error: moduleDetailError } = useSWR<ModuleDetail>(
+  const { data: moduleDetail, error: moduleDetailError, isLoading: moduleDetailLoading } = useSWR<ModuleDetail>(
     selectedModuleId ? `/modules/${selectedModuleId}` : null,
     fetchJson
   );
 
   useEffect(() => {
-    if (!moduleDetail?.lessons?.length) {
-      setSelectedLessonId(null);
-      return;
-    }
-
-    setSelectedLessonId((current) => {
-      if (current && moduleDetail.lessons.some((lesson) => lesson.id === current)) {
-        return current;
-      }
-      return moduleDetail.lessons[0].id;
-    });
+    setSelectedLessonId((current) => pickLessonId(moduleDetail, current));
   }, [moduleDetail]);
 
   const lessonKey = useMemo(() => {
@@ -126,19 +108,17 @@ export default function Home() {
 
   const onSubmitQuiz = async () => {
     if (!lesson || !selectedModuleId) return;
-    if (answers.length !== lesson.quiz.questions.length || answers.some((answer) => answer === undefined)) {
+    if (!canSubmitQuiz(lesson, answers)) {
       return;
     }
 
     setSubmittingQuiz(true);
     setQuizSubmitError(null);
     try {
-      const payload = await postJson<QuizResult>("/quiz/submit", {
-        user_id: userId || DEFAULT_USER,
-        module_id: selectedModuleId,
-        lesson_id: lesson.id,
-        answers,
-      });
+      const payload = await postJson<QuizResult>(
+        "/quiz/submit",
+        buildQuizPayload(lesson, selectedModuleId, answers, userId, DEFAULT_USER)
+      );
       setQuizResult(payload);
     } catch {
       setQuizSubmitError("No se pudo enviar el quiz. Verifica backend/conexión e intenta de nuevo.");
@@ -153,11 +133,7 @@ export default function Home() {
     setSubmittingProgress(true);
     setProgressSubmitError(null);
     try {
-      await postJson<unknown>("/progress", {
-        user_id: userId || DEFAULT_USER,
-        module_id: selectedModuleId,
-        completed_lessons: [lesson.id],
-      });
+      await postJson<unknown>("/progress", buildProgressPayload(lesson.id, selectedModuleId, userId, DEFAULT_USER));
       refreshProgress();
     } catch {
       setProgressSubmitError("No se pudo guardar el progreso. Intenta nuevamente.");
@@ -166,9 +142,7 @@ export default function Home() {
     }
   };
 
-  const isQuizReady = lesson
-    ? answers.length === lesson.quiz.questions.length && answers.every((answer) => answer !== undefined)
-    : false;
+  const isQuizReady = canSubmitQuiz(lesson ?? null, answers);
 
   if (!isAuthenticated) {
     return <AuthGate onLogin={() => setIsAuthenticated(true)} />;
@@ -197,6 +171,7 @@ export default function Home() {
         />
         <LessonPicker
           moduleDetail={moduleDetail}
+          loading={moduleDetailLoading}
           selectedLessonId={selectedLessonId}
           onSelectLesson={setSelectedLessonId}
           error={moduleDetailError ? "No se pudo cargar el detalle del módulo." : undefined}
@@ -214,6 +189,12 @@ export default function Home() {
       {progressError && (
         <section style={{ marginTop: "1rem" }}>
           <StatusMessage kind="error" message="No se pudo cargar el progreso del usuario." />
+        </section>
+      )}
+
+      {!lesson && !lessonError && selectedModuleId && selectedLessonId && (
+        <section style={{ marginTop: "1rem" }}>
+          <StatusMessage message="Cargando contenido de la lección..." />
         </section>
       )}
 

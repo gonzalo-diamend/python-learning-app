@@ -8,7 +8,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "npm run test:unit",
-    "test:unit": "tsc --module commonjs --target es2020 --outDir .test-dist tests/quiz.test.ts lib/quiz.ts lib/types.ts && node --test .test-dist/tests/quiz.test.js && node -e \"require('fs').rmSync('.test-dist',{recursive:true,force:true})\""
+    "test:unit": "tsc --module commonjs --target es2020 --outDir .test-dist tests/quiz.test.ts tests/api.test.ts tests/home-flow.test.ts lib/quiz.ts lib/api.ts lib/home-flow.ts lib/types.ts && node --test .test-dist/tests/quiz.test.js .test-dist/tests/api.test.js .test-dist/tests/home-flow.test.js && node -e \"require('fs').rmSync('.test-dist',{recursive:true,force:true})\"",
+    "dev:demo": "NEXT_PUBLIC_USE_MOCK_API=true NEXT_PUBLIC_APP_PASSWORD=python123 npm run dev",
+    "start:demo": "NEXT_PUBLIC_USE_MOCK_API=true NEXT_PUBLIC_APP_PASSWORD=python123 npm run start"
   },
   "dependencies": {
     "next": "14.0.0",
