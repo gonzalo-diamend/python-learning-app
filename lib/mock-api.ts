@@ -1,6 +1,7 @@
 import { Lesson, ModuleCard, ModuleDetail, QuizResult } from "./types";
 
 type ProgressRecord = Record<string, Record<string, number>>;
+type CompletedLessonsRecord = Record<string, Record<string, Set<string>>>;
 
 type LessonRecord = Record<string, Record<string, Lesson>>;
 
@@ -112,6 +113,7 @@ const mockLessons: LessonRecord = {
 };
 
 const progressDb: ProgressRecord = {};
+const completedLessonsDb: CompletedLessonsRecord = {};
 
 const getProgress = (userId: string, moduleId: string): number => progressDb[userId]?.[moduleId] ?? 0;
 
@@ -148,8 +150,24 @@ export const mockPostJson = async <T>(path: string, body: unknown): Promise<T> =
     const moduleDetail = mockModuleDetails[payload.module_id];
     if (!moduleDetail) throw new Error(`Mock: módulo inválido (${payload.module_id})`);
 
-    const completed = Math.min(payload.completed_lessons.length, moduleDetail.lessons.length);
-    const completionPercent = Math.round((completed / moduleDetail.lessons.length) * 100);
+    const validLessons = new Set(moduleDetail.lessons.map((lesson) => lesson.id));
+
+    if (!completedLessonsDb[payload.user_id]) {
+      completedLessonsDb[payload.user_id] = {};
+    }
+
+    if (!completedLessonsDb[payload.user_id][payload.module_id]) {
+      completedLessonsDb[payload.user_id][payload.module_id] = new Set<string>();
+    }
+
+    for (const lessonId of payload.completed_lessons) {
+      if (validLessons.has(lessonId)) {
+        completedLessonsDb[payload.user_id][payload.module_id].add(lessonId);
+      }
+    }
+
+    const completedCount = completedLessonsDb[payload.user_id][payload.module_id].size;
+    const completionPercent = Math.round((completedCount / moduleDetail.lessons.length) * 100);
 
     if (!progressDb[payload.user_id]) {
       progressDb[payload.user_id] = {};

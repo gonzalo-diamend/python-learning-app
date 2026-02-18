@@ -157,3 +157,38 @@ test("postJson quiz/submit responde usando mock API", async () => {
     }
   }
 });
+
+
+test("mock progress acumula lecciones completadas en envíos sucesivos", async () => {
+  const prev = process.env.NEXT_PUBLIC_USE_MOCK_API;
+  process.env.NEXT_PUBLIC_USE_MOCK_API = "true";
+
+  const userId = "progress-e2e-user";
+  const moduleId = "python-basics";
+
+  try {
+    await postJson<{ ok: boolean }>("/progress", {
+      user_id: userId,
+      module_id: moduleId,
+      completed_lessons: ["intro-print"],
+    });
+
+    const afterFirst = await fetchJson<{ completion_percent: number }>(`/progress/${userId}/${moduleId}`);
+    assert.equal(afterFirst.completion_percent, 50);
+
+    await postJson<{ ok: boolean }>("/progress", {
+      user_id: userId,
+      module_id: moduleId,
+      completed_lessons: ["variables"],
+    });
+
+    const afterSecond = await fetchJson<{ completion_percent: number }>(`/progress/${userId}/${moduleId}`);
+    assert.equal(afterSecond.completion_percent, 100);
+  } finally {
+    if (prev === undefined) {
+      delete process.env.NEXT_PUBLIC_USE_MOCK_API;
+    } else {
+      process.env.NEXT_PUBLIC_USE_MOCK_API = prev;
+    }
+  }
+});
