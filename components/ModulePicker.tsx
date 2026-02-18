@@ -11,6 +11,7 @@ type ModulePickerProps = {
 
 export function ModulePicker({ modules, loading, error, selectedModuleId, onSelectModule }: ModulePickerProps) {
   const currentModule = modules?.find((module) => module.id === selectedModuleId);
+  const showEmpty = !loading && !error && modules?.length === 0;
 
   return (
     <article className="card">
@@ -18,6 +19,7 @@ export function ModulePicker({ modules, loading, error, selectedModuleId, onSele
       <h2>Selecciona módulo</h2>
       {loading && <StatusMessage message="Cargando módulos..." />}
       {error && <StatusMessage kind="error" message={error} />}
+      {showEmpty && <StatusMessage message="Todavía no hay módulos disponibles." />}
       <div className="stack">
         {modules?.map((module) => (
           <button

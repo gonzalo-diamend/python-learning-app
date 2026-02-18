@@ -12,10 +12,20 @@ Dashboard de aprendizaje para Python: módulos, lecciones, quiz interactivo y pr
 3. Abrir `http://localhost:3001`
 4. Ingresar la contraseña configurada para acceder.
 
+## Modo rápido (sin backend, recomendado para arrancar ya)
+1. `npm install`
+2. `npm run dev:demo`
+3. Abrir `http://localhost:3001`
+4. Contraseña: `python123`
+
+Este modo usa datos mock en memoria (`NEXT_PUBLIC_USE_MOCK_API=true`), para poder practicar sin levantar API externa.
+
 ## Scripts útiles
 - `npm run dev`: modo desarrollo.
+- `npm run dev:demo`: modo demo con API mock (sin backend).
 - `npm run build`: build de producción.
 - `npm run start`: levantar build de producción.
+- `npm run start:demo`: levantar build usando API mock.
 - `npm run typecheck`: verificación de tipos TypeScript.
 - `npm run test`: tests unitarios (Node test runner + compilación temporal TS).
 
