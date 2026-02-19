@@ -1,25 +1,40 @@
 import { FormEvent, useState } from "react";
+import { login } from "../lib/auth";
 import { StatusMessage } from "./StatusMessage";
 
 type AuthGateProps = {
-  onLogin: () => void;
+  onLogin: (userId: string) => void;
 };
 
-const APP_PASSWORD = process.env.NEXT_PUBLIC_APP_PASSWORD ?? "python123";
-
 export function AuthGate({ onLogin }: AuthGateProps) {
+  const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (password !== APP_PASSWORD) {
-      setError("Contraseña incorrecta. Intenta nuevamente.");
+    setError(null);
+
+    if (!userId.trim()) {
+      setError("Debes ingresar un usuario.");
       return;
     }
 
-    window.localStorage.setItem("learning_auth", "ok");
-    onLogin();
+    setSubmitting(true);
+    try {
+      const session = await login(userId.trim(), password);
+      if (!session.authenticated || !session.user_id) {
+        setError("No se pudo iniciar sesión.");
+        return;
+      }
+
+      onLogin(session.user_id);
+    } catch {
+      setError("Credenciales inválidas o backend no disponible.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -27,10 +42,20 @@ export function AuthGate({ onLogin }: AuthGateProps) {
       <section className="auth-wrapper">
         <article className="card auth-card">
           <p className="badge">Acceso</p>
-          <h1>Bienvenida a tu app de aprendizaje</h1>
-          <p>Ingresa la contraseña para continuar con tus módulos, quizzes y progreso.</p>
+          <h1>Ingreso con sesión backend</h1>
+          <p>Inicia sesión con tu usuario y contraseña. La sesión se mantiene vía cookie segura.</p>
           <form onSubmit={onSubmit}>
-            <label className="field-label" htmlFor="auth-password">
+            <label className="field-label" htmlFor="auth-user-id">
+              Usuario
+            </label>
+            <input
+              id="auth-user-id"
+              className="input"
+              value={userId}
+              onChange={(event) => setUserId(event.target.value)}
+              placeholder="ej: ana-python"
+            />
+            <label className="field-label" htmlFor="auth-password" style={{ marginTop: "0.75rem", display: "block" }}>
               Contraseña
             </label>
             <input
@@ -38,14 +63,11 @@ export function AuthGate({ onLogin }: AuthGateProps) {
               className="input"
               type="password"
               value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                setError(null);
-              }}
+              onChange={(event) => setPassword(event.target.value)}
               placeholder="Ingresa tu contraseña"
             />
-            <button className="btn btn-primary" type="submit" style={{ marginTop: "1rem" }}>
-              Entrar
+            <button className="btn btn-primary" type="submit" style={{ marginTop: "1rem" }} disabled={submitting}>
+              {submitting ? "Ingresando..." : "Entrar"}
             </button>
           </form>
           {error && <StatusMessage kind="error" message={error} />}
