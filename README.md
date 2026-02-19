@@ -4,21 +4,21 @@ Dashboard de aprendizaje para Python: módulos, lecciones, quiz interactivo y pr
 
 ## Requisitos
 - Node.js 18+
-- Backend disponible (por defecto en `http://localhost:8000`)
+- Backend HTTP disponible (por defecto `http://localhost:8000`)
 
 ## Setup local
 1. `npm install`
-2. `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 NEXT_PUBLIC_APP_PASSWORD=python123 npm run dev`
+2. `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 npm run dev`
 3. Abrir `http://localhost:3001`
-4. Ingresar la contraseña configurada para acceder.
+4. Iniciar sesión con usuario/contraseña válidos del backend.
 
 ## Modo rápido (sin backend, recomendado para arrancar ya)
 1. `npm install`
 2. `npm run dev:demo`
 3. Abrir `http://localhost:3001`
-4. Contraseña: `python123`
+4. Credenciales demo: cualquier usuario + contraseña `python123`
 
-Este modo usa datos mock en memoria (`NEXT_PUBLIC_USE_MOCK_API=true`), para poder practicar sin levantar API externa.
+Este modo usa API mock en memoria (`NEXT_PUBLIC_USE_MOCK_API=true`) para practicar sin servicios externos.
 
 ## Scripts útiles
 - `npm run dev`: modo desarrollo.
@@ -27,20 +27,19 @@ Este modo usa datos mock en memoria (`NEXT_PUBLIC_USE_MOCK_API=true`), para pode
 - `npm run start`: levantar build de producción.
 - `npm run start:demo`: levantar build usando API mock.
 - `npm run typecheck`: verificación de tipos TypeScript.
-- `npm run test`: tests unitarios (Node test runner + compilación temporal TS).
+- `npm run lint`: reglas mínimas de calidad (Next + React).
+- `npm run test`: tests unitarios.
+- `npm run test:e2e`: pruebas UI/E2E del flujo principal.
+- `npm run test:integration`: integración contra backend real (requiere env vars).
 
-## CI
-Se incluye workflow de GitHub Actions (`.github/workflows/ci.yml`) con:
-- `npm ci`
-- `npm run typecheck`
-- `npm run test`
-- `npm run build`
+## Variables de entorno
+- `NEXT_PUBLIC_API_BASE_URL`: URL base backend.
+- `NEXT_PUBLIC_API_TIMEOUT_MS`: timeout de requests.
+- `NEXT_PUBLIC_USE_MOCK_API`: usar mock API (`true`/`false`).
+- `BACKEND_BASE_URL`: para `test:integration`.
+- `BACKEND_TEST_USER`: usuario de pruebas backend real.
+- `BACKEND_TEST_PASSWORD`: contraseña del usuario de pruebas.
 
-## Dependencias backend esperadas
-La app consume:
-- `GET /modules`
-- `GET /modules/:module_id`
-- `GET /modules/:module_id/lessons/:lesson_id`
-- `GET /progress/:user_id/:module_id`
-- `POST /progress`
-- `POST /quiz/submit`
+## Documentación operativa
+- Contrato backend: `docs/backend-contract.md`.
+- Runbook deploy: `docs/deploy-runbook.md`.

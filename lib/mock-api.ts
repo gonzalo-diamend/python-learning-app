@@ -115,6 +115,8 @@ const mockLessons: LessonRecord = {
 const progressDb: ProgressRecord = {};
 const completedLessonsDb: CompletedLessonsRecord = {};
 
+let mockSessionUserId: string | null = null;
+
 const getProgress = (userId: string, moduleId: string): number => progressDb[userId]?.[moduleId] ?? 0;
 
 export const mockFetchJson = async <T>(path: string): Promise<T> => {
@@ -141,10 +143,33 @@ export const mockFetchJson = async <T>(path: string): Promise<T> => {
     return { completion_percent: getProgress(progressMatch[1], progressMatch[2]) } as T;
   }
 
+  if (path === "/auth/session") {
+    return {
+      authenticated: Boolean(mockSessionUserId),
+      user_id: mockSessionUserId ?? undefined,
+    } as T;
+  }
+
   throw new Error(`Mock: endpoint GET no soportado (${path})`);
 };
 
 export const mockPostJson = async <T>(path: string, body: unknown): Promise<T> => {
+  if (path === "/auth/login") {
+    const payload = body as { user_id?: string; password?: string };
+
+    if (!payload.user_id || !payload.password) {
+      throw new Error("Mock: credenciales incompletas");
+    }
+
+    mockSessionUserId = payload.user_id;
+    return { authenticated: true, user_id: payload.user_id } as T;
+  }
+
+  if (path === "/auth/logout") {
+    mockSessionUserId = null;
+    return { ok: true } as T;
+  }
+
   if (path === "/progress") {
     const payload = body as { user_id: string; module_id: string; completed_lessons: string[] };
     const moduleDetail = mockModuleDetails[payload.module_id];

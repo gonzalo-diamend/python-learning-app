@@ -9,6 +9,7 @@ import { QuizPanel } from "../components/QuizPanel";
 import { RecommendedModules } from "../components/RecommendedModules";
 import { StatusMessage } from "../components/StatusMessage";
 import { fetchJson, postJson } from "../lib/api";
+import { fetchSession, logout } from "../lib/auth";
 import { buildProgressPayload, buildQuizPayload, canSubmitQuiz, pickLessonId, pickModuleId } from "../lib/home-flow";
 import { Lesson, ModuleCard, ModuleDetail, QuizResult } from "../lib/types";
 
@@ -16,7 +17,7 @@ type ProgressData = {
   completion_percent: number;
 };
 
-const DEFAULT_USER = "demo-wife";
+const DEFAULT_USER = "demo-user";
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -31,20 +32,36 @@ export default function Home() {
   const [progressSubmitError, setProgressSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedAuth = window.localStorage.getItem("learning_auth");
-    if (savedAuth === "ok") {
-      setIsAuthenticated(true);
-    }
+    fetchSession()
+      .then((session) => {
+        if (session.authenticated) {
+          setIsAuthenticated(true);
+          if (session.user_id) {
+            setUserId(session.user_id);
+            window.localStorage.setItem("learning_user_id", session.user_id);
+          }
+          return;
+        }
 
-    const saved = window.localStorage.getItem("learning_user_id");
-    if (saved) {
-      setUserId(saved);
-    }
+        const saved = window.localStorage.getItem("learning_user_id");
+        if (saved) {
+          setUserId(saved);
+        }
+      })
+      .catch(() => {
+        const saved = window.localStorage.getItem("learning_user_id");
+        if (saved) {
+          setUserId(saved);
+        }
+      });
   }, []);
 
-  const onLogout = () => {
-    window.localStorage.removeItem("learning_auth");
-    setIsAuthenticated(false);
+  const onLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      setIsAuthenticated(false);
+    }
   };
 
   const onChangeUserId = (next: string) => {
@@ -145,7 +162,15 @@ export default function Home() {
   const isQuizReady = canSubmitQuiz(lesson ?? null, answers);
 
   if (!isAuthenticated) {
-    return <AuthGate onLogin={() => setIsAuthenticated(true)} />;
+    return (
+      <AuthGate
+        onLogin={(nextUserId) => {
+          setUserId(nextUserId);
+          window.localStorage.setItem("learning_user_id", nextUserId);
+          setIsAuthenticated(true);
+        }}
+      />
+    );
   }
 
   return (
